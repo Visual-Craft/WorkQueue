@@ -8,7 +8,7 @@ class AddOptions
 {
     private ?int $delay = null;
 
-    private ?string $initId = null;
+    private ?int $initId = null;
 
     private int $attempt = 1;
 
@@ -24,12 +24,12 @@ class AddOptions
         return $this;
     }
 
-    public function getInitId(): ?string
+    public function getInitId(): ?int
     {
         return $this->initId;
     }
 
-    public function setInitId(?string $value): self
+    public function setInitId(?int $value): self
     {
         $this->initId = $value;
 

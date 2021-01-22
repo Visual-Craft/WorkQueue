@@ -49,7 +49,7 @@ class QueueManager
         return $this->logger;
     }
 
-    public function add($payload, AddOptions $options): string
+    public function add($payload, AddOptions $options): int
     {
         $logger = $this->logger;
 
@@ -118,7 +118,7 @@ class QueueManager
         return new ReserveResult($pheanstalkJob->getId(), $job);
     }
 
-    public function delete(string $id): void
+    public function delete(int $id): void
     {
         $this->connection->delete(new PheanstalkJob($id, ''));
     }

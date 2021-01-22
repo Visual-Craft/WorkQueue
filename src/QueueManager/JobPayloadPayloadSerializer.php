@@ -27,7 +27,7 @@ class JobPayloadPayloadSerializer implements JobPayloadSerializerInterface
         $attemptsCount = $data[1] ?? null;
         $initialId = $data[2] ?? null;
 
-        if (!\is_int($attemptsCount) || (!\is_string($initialId) && null !== $initialId)) {
+        if (!\is_int($attemptsCount) || (!\is_int($initialId) && $initialId !== null)) {
             return null;
         }
 

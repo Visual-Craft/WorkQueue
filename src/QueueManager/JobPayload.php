@@ -13,9 +13,9 @@ class JobPayload
 
     private int $attempt;
 
-    private ?string $initId;
+    private ?int $initId;
 
-    public function __construct($payload, int $attemptsCount, ?string $initId)
+    public function __construct($payload, int $attemptsCount, ?int $initId)
     {
         $this->payload = $payload;
         $this->attempt = $attemptsCount;
@@ -32,7 +32,7 @@ class JobPayload
         return $this->attempt;
     }
 
-    public function getInitId(): ?string
+    public function getInitId(): ?int
     {
         return $this->initId;
     }

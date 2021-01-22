@@ -27,7 +27,7 @@ class RetryDelayProvider implements RetryDelayProviderInterface
 
         return $retryAttempt === 1
             ? $this->initialDelay
-            : $this->initialDelay * ($this->backoff ** ($retryAttempt - 1))
+            : (int) ($this->initialDelay * ($this->backoff ** ($retryAttempt - 1)))
         ;
     }
 }

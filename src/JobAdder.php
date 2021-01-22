@@ -15,7 +15,7 @@ class JobAdder
         $this->queueManager = $queueManager;
     }
 
-    public function add($payload, ?int $delay = null): string
+    public function add($payload, ?int $delay = null): int
     {
         return $this->queueManager->add($payload, (new AddOptions())->setDelay($delay));
     }
