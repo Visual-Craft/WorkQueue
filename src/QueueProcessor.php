@@ -102,10 +102,7 @@ class QueueProcessor
         $logger->log('info', 'Processing job', [
             'attempt' => $attempt,
         ]);
-        $jobMeta = new JobMetadata(
-            $data->getId(),
-            $jobStats ? $jobStats->getReserves() : 1
-        );
+        $jobMeta = new JobMetadata($data->getId(), $attempt);
 
         try {
             $this->worker->work($payload, $jobMeta);
