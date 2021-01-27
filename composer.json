@@ -1,7 +1,6 @@
 {
     "name": "visual-craft/work-queue",
     "license": "MIT",
-    "version": "dev-master",
     "description": "Work queue using Beanstalk",
     "homepage": "https://github.com/Visual-Craft/WorkQueue",
     "autoload": {
