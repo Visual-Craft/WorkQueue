@@ -6,31 +6,13 @@ namespace VisualCraft\WorkQueue\QueueManager;
 
 class JobPayloadPayloadSerializer implements JobPayloadSerializerInterface
 {
-    public function serialize(JobPayload $job): string
+    public function serialize($payload): string
     {
-        return serialize([
-            $job->getPayload(),
-            $job->getAttempt(),
-            $job->getInitId(),
-        ]);
+        return serialize($payload);
     }
 
-    public function unserialize(string $serialized): ?JobPayload
+    public function unserialize(string $serialized)
     {
-        $data = unserialize($serialized, ['allowed_classes' => false]);
-
-        if (!\is_array($data)) {
-            return null;
-        }
-
-        $payload = $data[0] ?? null;
-        $attemptsCount = $data[1] ?? null;
-        $initialId = $data[2] ?? null;
-
-        if (!\is_int($attemptsCount) || (!\is_int($initialId) && $initialId !== null)) {
-            return null;
-        }
-
-        return new JobPayload($payload, $attemptsCount, $initialId);
+        return unserialize($serialized, ['allowed_classes' => true]);
     }
 }

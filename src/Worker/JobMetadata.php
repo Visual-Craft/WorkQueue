@@ -8,25 +8,17 @@ class JobMetadata
 {
     private int $id;
 
-    private ?int $initId;
-
     private int $attempt;
 
-    public function __construct(int $id, ?int $initId, int $attempt)
+    public function __construct(int $id, int $attempt)
     {
         $this->id = $id;
-        $this->initId = $initId;
         $this->attempt = $attempt;
     }
 
     public function getId(): int
     {
         return $this->id;
-    }
-
-    public function getInitId(): ?int
-    {
-        return $this->initId;
     }
 
     public function getAttempt(): int

@@ -7,10 +7,10 @@ namespace VisualCraft\WorkQueue;
 use Pheanstalk\Exception\ServerException;
 use Pheanstalk\Job as PheanstalkJob;
 use Pheanstalk\Pheanstalk;
-use VisualCraft\WorkQueue\QueueManager\AddOptions;
-use VisualCraft\WorkQueue\QueueManager\JobPayload;
+use Pheanstalk\Response\ArrayResponse;
 use VisualCraft\WorkQueue\QueueManager\JobPayloadPayloadSerializer;
 use VisualCraft\WorkQueue\QueueManager\JobPayloadSerializerInterface;
+use VisualCraft\WorkQueue\QueueManager\JobStats;
 use VisualCraft\WorkQueue\QueueManager\ReserveResult;
 
 class QueueManager
@@ -49,27 +49,18 @@ class QueueManager
         return $this->logger;
     }
 
-    public function add($payload, AddOptions $options): int
+    public function add($payload, ?int $delay = null): int
     {
         $logger = $this->logger;
-
-        if ($options->getInitId() !== null) {
-            $logger = $this->logger->withContext([
-                'init_id' => $options->getInitId(),
-            ]);
-        }
-
         $logger->log('info', 'Adding job');
 
         try {
             $pheanstalkJob = $this->connection
                 ->useTube($this->queueName)
                 ->put(
-                    $this->jobPayloadSerializer->serialize(
-                        new JobPayload($payload, $options->getAttempt(), $options->getInitId())
-                    ),
+                    $this->jobPayloadSerializer->serialize($payload),
                     Pheanstalk::DEFAULT_PRIORITY,
-                    $options->getDelay() ?: Pheanstalk::DEFAULT_DELAY,
+                    $delay ?: Pheanstalk::DEFAULT_DELAY,
                     $this->ttr
                 )
             ;
@@ -84,6 +75,15 @@ class QueueManager
         ]);
 
         return $pheanstalkJob->getId();
+    }
+
+    public function release(int $id, ?int $delay = null): void
+    {
+        $this->connection->release(
+            new PheanstalkJob($id, ''),
+            Pheanstalk::DEFAULT_PRIORITY,
+            $delay ?: Pheanstalk::DEFAULT_DELAY
+        );
     }
 
     public function reserve(int $timeout): ?ReserveResult
@@ -113,7 +113,7 @@ class QueueManager
             return null;
         }
 
-        $logger->log('info', 'Job is reserved', $job->getInitId() !== null ? ['init_id' => $job->getInitId()] : []);
+        $logger->log('info', 'Job is reserved');
 
         return new ReserveResult($pheanstalkJob->getId(), $job);
     }
@@ -134,7 +134,7 @@ class QueueManager
                     ->{$method}($this->queueName)
                 ;
             } catch (ServerException $e) {
-                if (strpos($e->getMessage(), 'NOT_FOUND:') === 0) {
+                if ($this->isNotFoundServerException($e)) {
                     return null;
                 }
 
@@ -156,5 +156,44 @@ class QueueManager
         }
 
         $logger->log('info', 'Clearing done');
+    }
+
+    public function jobStats(int $id): ?JobStats
+    {
+        $response = null;
+
+        try {
+            $response = $this->connection->statsJob(new PheanstalkJob($id, ''));
+        } /** @noinspection PhpRedundantCatchClauseInspection */ catch (ServerException $e) {
+            if (!$this->isNotFoundServerException($e)) {
+                throw $e;
+            }
+        }
+
+        if (!$response instanceof ArrayResponse) {
+            return null;
+        }
+
+        return new JobStats(
+            (int) $response->id,
+            (string) $response->tube,
+            (string) $response->state,
+            (int) $response->pri,
+            (int) $response->age,
+            (int) $response->delay,
+            (int) $response->ttr,
+            (int) $response->{'time-left'},
+            (int) $response->file,
+            (int) $response->reserves,
+            (int) $response->timeouts,
+            (int) $response->releases,
+            (int) $response->buries,
+            (int) $response->kicks,
+        );
+    }
+
+    private function isNotFoundServerException(ServerException $e): bool
+    {
+        return strpos($e->getMessage(), 'NOT_FOUND') !== false;
     }
 }

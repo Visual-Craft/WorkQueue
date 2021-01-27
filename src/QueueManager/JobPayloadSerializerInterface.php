@@ -6,7 +6,13 @@ namespace VisualCraft\WorkQueue\QueueManager;
 
 interface JobPayloadSerializerInterface
 {
-    public function serialize(JobPayload $job): string;
+    /**
+     * @param mixed $payload
+     */
+    public function serialize($payload): string;
 
-    public function unserialize(string $serialized): ?JobPayload;
+    /**
+     * @return mixed
+     */
+    public function unserialize(string $serialized);
 }

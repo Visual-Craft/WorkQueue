@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace VisualCraft\WorkQueue;
 
-use VisualCraft\WorkQueue\QueueManager\AddOptions;
-
 class JobAdder
 {
     private QueueManager $queueManager;
@@ -17,6 +15,6 @@ class JobAdder
 
     public function add($payload, ?int $delay = null): int
     {
-        return $this->queueManager->add($payload, (new AddOptions())->setDelay($delay));
+        return $this->queueManager->add($payload, $delay);
     }
 }

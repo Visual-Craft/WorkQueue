@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace VisualCraft\WorkQueue;
 
-use VisualCraft\WorkQueue\QueueManager\AddOptions;
 use VisualCraft\WorkQueue\QueueProcessor\QueueProcessorLimits;
 use VisualCraft\WorkQueue\QueueProcessor\QueueProcessorStats;
 use VisualCraft\WorkQueue\QueueProcessor\RetryDelayProviderInterface;
@@ -97,24 +96,24 @@ class QueueProcessor
             'id' => $data->getId(),
         ]);
         ++$this->totalJobsCount;
-        $job = $data->getJob();
+        $payload = $data->getPayload();
+        $jobStats = $this->queueManager->jobStats($data->getId());
+        $attempt = $jobStats ? $jobStats->getReserves() : 1;
         $logger->log('info', 'Processing job', [
-            'attempt' => $job->getAttempt(),
+            'attempt' => $attempt,
         ]);
         $jobMeta = new JobMetadata(
             $data->getId(),
-            $job->getInitId() ?: $data->getId(),
-            $job->getAttempt()
+            $jobStats ? $jobStats->getReserves() : 1
         );
 
         try {
-            $this->worker->work($job->getPayload(), $jobMeta);
+            $this->worker->work($payload, $jobMeta);
             $logger->log('info', 'Job performed successfully');
             ++$this->successfulJobsCount;
-        } catch (\Exception $exception) {
-            $this->handleException($exception, $job->getPayload(), $jobMeta, $logger);
-        } finally {
             $this->queueManager->delete($data->getId());
+        } catch (\Exception $exception) {
+            $this->handleException($exception, $payload, $jobMeta, $logger);
         }
 
         return true;
@@ -163,18 +162,14 @@ class QueueProcessor
             $logger->log('info', 'Retrying was not performed since the error is permanent');
         } elseif (($delay = $this->retryDelayProvider->getRetryDelay($jobMeta->getAttempt())) !== null) {
             $logger->log('info', 'Retrying', ['delay' => $delay]);
-            $this->queueManager->add(
-                $payload,
-                (new AddOptions())
-                    ->setDelay($delay)
-                    ->setAttempt($jobMeta->getAttempt() + 1)
-                    ->setInitId($jobMeta->getInitId())
-            );
+            $this->queueManager->release($jobMeta->getId(), $delay);
 
             return;
         } else {
             $logger->log('info', 'Retrying was not performed since the limit of attempts was reached');
         }
+
+        $this->queueManager->delete($jobMeta->getId());
 
         if ($this->worker instanceof AdvancedWorkerInterface) {
             try {

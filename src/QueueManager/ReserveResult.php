@@ -8,12 +8,18 @@ class ReserveResult
 {
     private int $id;
 
-    private JobPayload $job;
+    /**
+     * @var mixed
+     */
+    private $payload;
 
-    public function __construct(int $id, JobPayload $job)
+    /**
+     * @param mixed $payload
+     */
+    public function __construct(int $id, $payload)
     {
         $this->id = $id;
-        $this->job = $job;
+        $this->payload = $payload;
     }
 
     public function getId(): int
@@ -21,8 +27,11 @@ class ReserveResult
         return $this->id;
     }
 
-    public function getJob(): JobPayload
+    /**
+     * @return mixed
+     */
+    public function getPayload()
     {
-        return $this->job;
+        return $this->payload;
     }
 }
