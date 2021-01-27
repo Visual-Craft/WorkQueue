@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace VisualCraft\WorkQueue\QueueManager;
 
-interface JobPayloadSerializerInterface
+interface PayloadSerializerInterface
 {
     /**
      * @param mixed $payload

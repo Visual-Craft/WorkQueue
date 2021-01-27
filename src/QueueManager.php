@@ -8,8 +8,8 @@ use Pheanstalk\Exception\ServerException;
 use Pheanstalk\Job as PheanstalkJob;
 use Pheanstalk\Pheanstalk;
 use Pheanstalk\Response\ArrayResponse;
-use VisualCraft\WorkQueue\QueueManager\JobPayloadPayloadSerializer;
-use VisualCraft\WorkQueue\QueueManager\JobPayloadSerializerInterface;
+use VisualCraft\WorkQueue\QueueManager\PayloadSerializer;
+use VisualCraft\WorkQueue\QueueManager\PayloadSerializerInterface;
 use VisualCraft\WorkQueue\QueueManager\JobStats;
 use VisualCraft\WorkQueue\QueueManager\ReserveResult;
 
@@ -23,24 +23,24 @@ class QueueManager
 
     private int $ttr;
 
-    private JobPayloadSerializerInterface $jobPayloadSerializer;
+    private PayloadSerializerInterface $payloadSerializer;
 
     public function __construct(
         Pheanstalk $connection,
         string $queueName,
         Logger $logger,
         int $ttr = 3600,
-        ?JobPayloadSerializerInterface $jobPayloadSerializer = null
+        ?PayloadSerializerInterface $payloadSerializer = null
     ) {
         $this->connection = $connection;
         $this->queueName = $queueName;
         $this->logger = $logger->withContext(['queue' => $this->queueName]);
         $this->ttr = $ttr;
 
-        if ($jobPayloadSerializer === null) {
-            $this->jobPayloadSerializer = new JobPayloadPayloadSerializer();
+        if ($payloadSerializer === null) {
+            $this->payloadSerializer = new PayloadSerializer();
         } else {
-            $this->jobPayloadSerializer = $jobPayloadSerializer;
+            $this->payloadSerializer = $payloadSerializer;
         }
     }
 
@@ -58,7 +58,7 @@ class QueueManager
             $pheanstalkJob = $this->connection
                 ->useTube($this->queueName)
                 ->put(
-                    $this->jobPayloadSerializer->serialize($payload),
+                    $this->payloadSerializer->serialize($payload),
                     Pheanstalk::DEFAULT_PRIORITY,
                     $delay ?: Pheanstalk::DEFAULT_DELAY,
                     $this->ttr
@@ -104,7 +104,7 @@ class QueueManager
         $logger = $logger->withContext([
             'id' => $pheanstalkJob->getId(),
         ]);
-        $job = $this->jobPayloadSerializer->unserialize($pheanstalkJob->getData());
+        $job = $this->payloadSerializer->unserialize($pheanstalkJob->getData());
 
         if (!$job) {
             $logger->log('warning', 'Malformed job data, skipping');

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace VisualCraft\WorkQueue\QueueManager;
 
-class JobPayloadPayloadSerializer implements JobPayloadSerializerInterface
+class PayloadSerializer implements PayloadSerializerInterface
 {
     public function serialize($payload): string
     {
